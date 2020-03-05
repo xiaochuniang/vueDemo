@@ -54,6 +54,9 @@
           </div>
         </el-form-item>
         <el-form-item label="" class="sub-btn-item">
+          <!-- <el-button type="danger" disabled v-if="isDisable == false"
+            >登陆</el-button
+          > -->
           <el-button type="danger" @click="submitForm('ruleForm')"
             >登陆</el-button
           >
@@ -64,15 +67,15 @@
 </template>
 
 <script>
-import { stripscript, validateEmail, validatePass, validateVCode } from "../../assets/js/rule.js";
-import { reactive, ref, isRef, toRefs, onMounted } from '@vue/composition-api';
+import {
+  stripscript,
+  validateEmail,
+  validatePass,
+  validateVCode
+} from "../../assets/js/rule.js";
 export default {
   name: "login",
-  setup( props, { refs } ) {
-
-    /**
-     * ====================验证开始
-     */
+  data() {
     // 验证用户名
     let validateUsername = (rule, value, callback) => {
       if (value == "") {
@@ -87,8 +90,8 @@ export default {
     // 验证密码
     let validatePassword = (rule, value, callback) => {
       // 过滤后的字符串
-      ruleForm.passWord = stripscript(value);
-      value = ruleForm.passWord;
+      this.ruleForm.passWord = stripscript(value);
+      value = this.ruleForm.passWord;
 
       if (value == "") {
         callback(new Error("请输入密码"));
@@ -101,16 +104,16 @@ export default {
 
     // 验证确认密码
     let validateCheckpwd = (rule, value, callback) => {
-      if (model.value == "login") {
+      if (this.model == "login") {
         callback();
       }
       // 过滤后的字符串
-      ruleForm.checkPwd = stripscript(value);
-      value = ruleForm.checkPwd;
+      this.ruleForm.checkPwd = stripscript(value);
+      value = this.ruleForm.checkPwd;
 
       if (value == "") {
         callback(new Error("请输入密码"));
-      } else if (value != ruleForm.passWord) {
+      } else if (value != this.ruleForm.passWord) {
         callback(new Error("确认密码不正确"));
       } else {
         callback();
@@ -128,40 +131,39 @@ export default {
       }
     };
 
-    /**
-     * ===================验证结束
-     */
-
-
-    const navBas = reactive([
-      { txt: "登陆", current: true, type: "login" },
-      { txt: "注册", current: false, type: "register" }
-    ])
-    const model = ref("login")
-    const ruleForm = reactive({
-      userName: "",
-      passWord: "",
-      checkPwd: "",
-      Code: ""
-    })
-    const rules = reactive({
-      userName: [{ validator: validateUsername, trigger: "blur" }],
-      passWord: [{ validator: validatePassword, trigger: "blur" }],
-      checkPwd: [{ validator: validateCheckpwd, trigger: "blur" }],
-      Code: [{ validator: validateCode, trigger: "blur" }]
-    })
-
-    const changeNav = (data => {
-      navBas.forEach((item, index) => {
+    return {
+      navBas: [
+        { txt: "登陆", current: true, type: "login" },
+        { txt: "注册", current: false, type: "register" }
+      ],
+      model: "login",
+      isDisable: false,
+      ruleForm: {
+        userName: "",
+        passWord: "",
+        checkPwd: "",
+        Code: ""
+      },
+      rules: {
+        userName: [{ validator: validateUsername, trigger: "blur" }],
+        passWord: [{ validator: validatePassword, trigger: "blur" }],
+        checkPwd: [{ validator: validateCheckpwd, trigger: "blur" }],
+        Code: [{ validator: validateCode, trigger: "blur" }]
+      }
+    };
+  },
+  mounted() {},
+  methods: {
+    changeNav(data) {
+      this.navBas.forEach((item, index) => {
         item.current = false;
       });
 
       data.current = true;
-      model.value = data.type;
-    })
-
-    const submitForm = (formName => {
-      refs[formName].validate(valid => {
+      this.model = data.type;
+    },
+    submitForm(formName) {
+      this.$refs[formName].validate(valid => {
         if (valid) {
           alert("submit!");
         } else {
@@ -169,15 +171,6 @@ export default {
           return false;
         }
       });
-    })
-
-    return {
-      navBas,
-      model,
-      ruleForm,
-      rules,
-      changeNav,
-      submitForm
     }
   }
 };
