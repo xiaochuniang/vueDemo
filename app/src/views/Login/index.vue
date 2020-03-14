@@ -48,7 +48,7 @@
               v-model="ruleForm.Code"
               autocomplete="off"
             ></el-input>
-            <el-button class="verification-code-btn" type="success"
+            <el-button class="verification-code-btn" type="success" @click="getCode()"
               >获取验证码</el-button
             >
           </div>
@@ -64,7 +64,8 @@
 </template>
 
 <script>
-import { stripscript, validateEmail, validatePass, validateVCode } from "../../assets/js/rule.js";
+import { getSms } from '@/api/login'
+import { stripscript, validateEmail, validatePass, validateVCode } from "../../utils/validate";
 import { reactive, ref, isRef, toRefs, onMounted } from '@vue/composition-api';
 export default {
   name: "login",
@@ -132,18 +133,20 @@ export default {
      * ===================验证结束
      */
 
-
     const navBas = reactive([
       { txt: "登陆", current: true, type: "login" },
       { txt: "注册", current: false, type: "register" }
     ])
+
     const model = ref("login")
+
     const ruleForm = reactive({
       userName: "",
       passWord: "",
       checkPwd: "",
       Code: ""
     })
+
     const rules = reactive({
       userName: [{ validator: validateUsername, trigger: "blur" }],
       passWord: [{ validator: validatePassword, trigger: "blur" }],
@@ -171,13 +174,27 @@ export default {
       });
     })
 
+    // 获取验证码
+    const getCode = ( () => {
+      console.log("123")
+      getSms()
+    } )
+
+    /**
+     * 挂载完事件
+     */
+    onMounted( () => {
+      
+    })
+
     return {
       navBas,
       model,
       ruleForm,
       rules,
       changeNav,
-      submitForm
+      submitForm,
+      getCode
     }
   }
 };
