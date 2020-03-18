@@ -176,7 +176,6 @@ export default {
 
     // 获取验证码
     const getCode = ( () => {
-      console.log("123")
       getSms()
     } )
 

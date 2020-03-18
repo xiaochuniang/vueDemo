@@ -2,11 +2,14 @@
  * 拦截器 
  * 2020-03-14
  */
-
 import axios from 'axios'
-
+// 设置基础路由
+const BASEURL = process.env.NODE_ENV === 'production' ? '' : '/devApi';
 // 创建实例
-const service = axios.create();
+const service = axios.create({
+    baseURL: BASEURL,  // http://192.168.0.106:8080/devApi/  == http://www.web-jshtml.cn/productapi/productapi
+    timeout: 15000,   // 超时
+});
 
 // 添加请求拦截器
 service.interceptors.request.use(

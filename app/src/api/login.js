@@ -7,9 +7,9 @@ import service from '@/utils/request.js'
  * 获取验证码的接口
  */
 export function getSms() {
-    service.request({
-        method: 'post',
-        url: '/getSms',
+    return service.request({
+        method: "post",
+        url: "/getSms/",
         data: {}
     })
 }
