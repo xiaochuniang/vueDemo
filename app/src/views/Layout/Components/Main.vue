@@ -1,0 +1,41 @@
+<template>
+  <div class="main-body">
+    <div class="main-content">
+      <div class="content">
+        <!-- 子路由显示区 -->
+        <keep-alive>
+          <!-- 需要缓存 -->
+          <router-view v-if="$route.meta.keepAlive" />
+        </keep-alive>
+        <!-- 不需要缓存 -->
+        <router-view v-if="!$route.meta.keepAlive" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {};
+</script>
+
+<style lang="scss" scoped>
+@import "../../../styles/config.scss";
+.main-body {
+  height: 100vh;
+  .main-content {
+    width: 100%;
+    height: 100%;
+    padding-top: $layoutHeader + 30;
+    padding-right: 30px;
+    @include webkit(box-sizing, border-box);
+    @include webkit(transition, all 0.3s ease 0s);
+    .content {
+      width: 100%;
+      height: 100%;
+      padding: 30px 30px 0 30px;
+      background-color: #fff;
+      @include webkit(box-sizing, border-box);
+    }
+  }
+}
+</style>

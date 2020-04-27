@@ -21,12 +21,13 @@
         label-position="top"
         size="medium"
       >
-        <el-form-item label="邮箱" prop="userName">
-          <el-input v-model="ruleForm.userName" autocomplete="off"></el-input>
+        <el-form-item label="邮箱" prop="username">
+          <el-input v-model="ruleForm.username" autocomplete="off"></el-input>
         </el-form-item>
-        <el-form-item label="密码" prop="passWord">
+        <el-form-item label="密码" prop="password">
           <el-input
-            v-model="ruleForm.passWord"
+           type="password"
+            v-model="ruleForm.password"
             minlength="6"
             maxlength="20"
             autocomplete="off"
@@ -37,25 +38,32 @@
           prop="checkPwd"
           v-show="model === 'register'"
         >
-          <el-input v-model="ruleForm.checkPwd" autocomplete="off"></el-input>
+          <el-input type="password" v-model="ruleForm.checkPwd" autocomplete="off"></el-input>
         </el-form-item>
-        <el-form-item label="验证码" prop="Code">
+        <el-form-item label="验证码" prop="code">
           <div class="verification-code-box">
             <el-input
               class="verification-code-input"
               minlength="6"
               maxlength="6"
-              v-model="ruleForm.Code"
+              v-model="ruleForm.code"
               autocomplete="off"
             ></el-input>
-            <el-button class="verification-code-btn" type="success" @click="getCode()"
-              >获取验证码</el-button
+            <el-button
+              class="verification-code-btn"
+              type="success"
+              @click="getCode()"
+              :disabled="codeBtnStatus.type"
+              >{{ codeBtnStatus.text }}</el-button
             >
           </div>
         </el-form-item>
         <el-form-item label="" class="sub-btn-item">
-          <el-button type="danger" @click="submitForm('ruleForm')"
-            >登陆</el-button
+          <el-button
+            type="danger"
+            @click="submitForm('ruleForm')"
+            :disabled="loginBtnStatus"
+            >{{ model === "login" ? "登陆" : "注册" }}</el-button
           >
         </el-form-item>
       </el-form>
@@ -64,13 +72,17 @@
 </template>
 
 <script>
-import { getSms } from '@/api/login'
-import { stripscript, validateEmail, validatePass, validateVCode } from "../../utils/validate";
-import { reactive, ref, isRef, toRefs, onMounted } from '@vue/composition-api';
+import { getSms, Register, Login } from "@/api/login";
+import {
+  stripscript,
+  validateEmail,
+  validatePass,
+  validateVCode
+} from "../../utils/validate";
+import { reactive, ref, isRef, toRefs, onMounted } from "@vue/composition-api";
 export default {
   name: "login",
-  setup( props, { refs } ) {
-
+  setup(props, { refs, root }) {
     /**
      * ====================验证开始
      */
@@ -88,8 +100,8 @@ export default {
     // 验证密码
     let validatePassword = (rule, value, callback) => {
       // 过滤后的字符串
-      ruleForm.passWord = stripscript(value);
-      value = ruleForm.passWord;
+      ruleForm.password = stripscript(value);
+      value = ruleForm.password;
 
       if (value == "") {
         callback(new Error("请输入密码"));
@@ -111,7 +123,7 @@ export default {
 
       if (value == "") {
         callback(new Error("请输入密码"));
-      } else if (value != ruleForm.passWord) {
+      } else if (value != ruleForm.password) {
         callback(new Error("确认密码不正确"));
       } else {
         callback();
@@ -136,55 +148,163 @@ export default {
     const navBas = reactive([
       { txt: "登陆", current: true, type: "login" },
       { txt: "注册", current: false, type: "register" }
-    ])
+    ]);
 
-    const model = ref("login")
-
+    const model = ref("login");
+    const loginBtnStatus = ref(true);
+    // 验证码按钮状态
+    const codeBtnStatus = reactive({
+      type: false,
+      text: "获取验证码"
+    });
+    // 表单
     const ruleForm = reactive({
-      userName: "",
-      passWord: "",
+      username: "",
+      password: "",
       checkPwd: "",
-      Code: ""
-    })
+      code: ""
+    });
+    // 存储倒计时
+    const timer = ref(null)
 
     const rules = reactive({
-      userName: [{ validator: validateUsername, trigger: "blur" }],
-      passWord: [{ validator: validatePassword, trigger: "blur" }],
+      username: [{ validator: validateUsername, trigger: "blur" }],
+      password: [{ validator: validatePassword, trigger: "blur" }],
       checkPwd: [{ validator: validateCheckpwd, trigger: "blur" }],
-      Code: [{ validator: validateCode, trigger: "blur" }]
-    })
+      code: [{ validator: validateCode, trigger: "blur" }]
+    });
 
-    const changeNav = (data => {
+    const changeNav = data => {
       navBas.forEach((item, index) => {
         item.current = false;
       });
 
+      // 高光
       data.current = true;
+      // 修改模块值
       model.value = data.type;
-    })
+      // 还原btn
+      resetBtn()
+    };
 
-    const submitForm = (formName => {
+    // 提交表单
+    const submitForm = formName => {
+      
       refs[formName].validate(valid => {
         if (valid) {
-          alert("submit!");
+          let param = ruleForm
+          param.module = model.value
+          param = {...param, ruleForm}
+
+          if (model.value === 'register') {
+            Register(param).then( response => {
+              root.$message({
+                message: response.data.message,
+                type: 'success'
+              })
+              changeNav(navBas[0])
+            }).catch( error => {
+
+            })
+            // 重置表单
+            refs["ruleForm"].resetFields();
+          } else {
+            Login(param).then( response => {
+              if(response.data.resCode === 0) {
+                root.$router.push({
+                  name: 'Console'
+                })
+              }
+            })
+          }
         } else {
           console.log("error submit!!");
           return false;
         }
       });
-    })
+    };
 
     // 获取验证码
-    const getCode = ( () => {
-      getSms()
-    } )
+    const getCode = () => {
+      if (ruleForm.username === "") {
+        root.$message.error("邮箱不能为空！");
+        return false;
+      }
+
+      if (validateEmail(ruleForm.username)) {
+        root.$message.error("用户名格式错误！");
+        return false;
+      }
+
+      const params = {
+        module: model.value,
+        username: ruleForm.username
+      };
+
+      // 修改验证码按钮状态
+      codeBtnStatus.type = true
+      codeBtnStatus.text = '发送中...'
+
+      setTimeout(() => {
+        getSms(params)
+          .then(response => {
+            let data = response.data;
+            root.$message({
+              message: data.message,
+              type: "success"
+            });
+
+            // 启用登陆注册按钮
+            loginBtnStatus.value = false
+            // 调用定时器 倒计时
+            countDown(5)
+          })
+          .catch(error => {
+            console.log(error);
+          });
+      }, 5000);
+    };
+
+    /**
+     * 倒计时
+     */
+    const countDown = ((time) => {
+      // 判断定时器是否存在 存在则清除
+      if (timer.value) { clearInterval(timer.value) }
+      /**
+       * setTimeout  只执行一次
+       * setInterval 不断执行，需要条件进行结束
+       */
+      
+      timer.value = setInterval(() => {
+        time--;
+        if (time === 0) {
+          clearInterval(timer.value)
+          codeBtnStatus.type = false
+          codeBtnStatus.text = `再次发送`
+        }else {
+          codeBtnStatus.text = `倒计时${time}秒`
+        }
+      }, 1000);
+    })
+
+    /**
+     * 所有按钮还原为初始状态
+     */
+    const resetBtn = (() => {
+      clearInterval(timer.value)
+      // 按钮状态
+      codeBtnStatus.type = false
+      codeBtnStatus.text = '获取验证码'
+      loginBtnStatus.value = true
+      // 重置表单
+      refs["ruleForm"].resetFields();
+    })
 
     /**
      * 挂载完事件
      */
-    onMounted( () => {
-      
-    })
+    onMounted(() => {});
 
     return {
       navBas,
@@ -193,8 +313,11 @@ export default {
       rules,
       changeNav,
       submitForm,
-      getCode
-    }
+      getCode,
+      loginBtnStatus,
+      codeBtnStatus,
+      timer
+    };
   }
 };
 </script>

@@ -3,6 +3,7 @@
  * 2020-03-14
  */
 import axios from 'axios'
+import { Message } from 'element-ui';
 // 设置基础路由
 const BASEURL = process.env.NODE_ENV === 'production' ? '' : '/devApi';
 // 创建实例
@@ -26,6 +27,14 @@ service.interceptors.request.use(
 // 添加响应拦截器
 service.interceptors.response.use(
   function(response) {
+      const data = response.data
+      if (data.resCode !== 0) {
+        Message.error(data.message);
+        return Promise.reject(data);
+      } else {
+        return response;
+      }
+
     // 对响应数据做点什么
     return response;
   },
